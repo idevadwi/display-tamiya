@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Test Portrait Layout</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: black;
+      font-family: sans-serif;
+    }
+
+    .rotated-wrapper {
+      width: 1920px;
+      height: 1080px;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) rotate(90deg) scale(0.5625); /* Centered & rotated */
+      transform-origin: center center;
+      background: #111;
+    }
+
+    .overlay {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      color: white;
+      font-size: 80px;
+      top: 500px;
+    }
+  </style>
+</head>
+<body>
+  <div class="rotated-wrapper">
+    <div class="overlay">Hello TV</div>
+  </div>
+</body>
+</html>
