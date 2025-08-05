@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Best Race Leaderboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@700&display=swap" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 1080px;
+      height: 1920px;
+      background: url('best-race.png') no-repeat center center;
+      background-size: cover;
+      font-family: 'Tomorrow', sans-serif;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .row {
+      position: absolute;
+      width: 700px;
+      left: 250px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      font-size: 60px;
+    }
+
+    .row-1 { top: 565px; }
+    .row-2 { top: 685px; }
+    .row-3 { top: 810px; }
+    .row-4 { top: 925px; }
+    .row-5 { top: 1060px; }
+    .row-6 { top: 1190px; }
+    .row-7 { top: 1310px; }
+    .row-8 { top: 1440px; }
+
+    #refresh-indicator {
+      position: absolute;
+      top: 20px;
+      right: 40px;
+      font-size: 28px;
+      color: #ccc;
+      font-weight: normal;
+    }
+
+    /* Animate score flash */
+    @keyframes flashYellow {
+      0% { color: yellow; }
+      100% { color: white; }
+    }
+
+    .score.animate {
+      animation: flashYellow 0.5s ease;
+    }
+
+    .team {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      width: 400px;
+      height: 72px;
+      font-weight: bold;
+      font-size: 55px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transform: scale(1);
+      transform-origin: left center;
+    }
+  </style>
+</head>
+<body>
+    <div id="refresh-indicator">Last updated: <span id="last-updated">-</span></div>
+
+<script>
+  const leaderboard_json2 = "https://opensheet.elk.sh/1HZ_Rfy-dHDbgocy0ckAI8urAF1-wkC5m3QErxxNx_-w/Sheet2";
+    const leaderboard_json = "    https://script.google.com/macros/s/AKfycbxq5nnhosKFr5mXHD7R6A7kY_VLp4PWu8EcZ1FKHjmN1gHyH-HZPhrpCin7ZTM8vUqEoQ/exec";
+    
+    let lastUpdate = Date.now();
+    let refreshTimer;
+
+  async function fetchData() {
+    try {
+      const res = await fetch(leaderboard_json);
+      const data = await res.json();
+      lastUpdate = Date.now();
+
+      document.getElementById("last-updated").textContent = new Date().toLocaleTimeString();
+
+      data.forEach((entry, index) => {
+        const rowClass = `row-${index + 1}`;
+        const existingRow = document.querySelector(`.${rowClass}`);
+
+        if (existingRow) {
+          const teamEl = existingRow.querySelector('.team');
+          const scoreEl = existingRow.querySelector('.score');
+          const oldScore = scoreEl.getAttribute('data-score');
+
+          // Update if score changed
+          if (oldScore !== entry["SCORE"]) {
+            scoreEl.textContent = entry["SCORE"];
+            scoreEl.setAttribute('data-score', entry["SCORE"]);
+            scoreEl.classList.remove("updated");
+            void scoreEl.offsetWidth;
+            scoreEl.classList.add("updated");
+            setTimeout(() => {
+              scoreEl.classList.remove("updated");
+            }, 400);
+          }
+
+          teamEl.textContent = entry["TEAM NAME"];
+        } else {
+          const rowDiv = document.createElement('div');
+          rowDiv.className = `row ${rowClass}`;
+          rowDiv.innerHTML = `
+            <div class="team">${entry["TEAM NAME"]}</div>
+            <div class="score" data-score="${entry["SCORE"]}">${entry["SCORE"]}</div>
+          `;
+          document.body.appendChild(rowDiv);
+        }
+      });
+    } catch (e) {
+      console.error("Failed to fetch sheet data", e);
+    }
+  }
+
+  fetchData();
+  setInterval(fetchData, 10000);
+</script>
+
+</body>
+</html>
