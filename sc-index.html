@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>SC TEAM ANNIVERSARY RACE</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: black;
+    }
+
+    iframe {
+      border: none;
+      width: 100%;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+
+  <iframe id="slideshow-frame" src="sc1.html"></iframe>
+
+  <script>
+    const pages = [
+      { url: "sc1.html", duration: 15000 }, // 15s
+      { url: "sc-best.html", duration: 10000 }   // 10s
+    ];
+
+    let index = 0;
+    const frame = document.getElementById("slideshow-frame");
+
+    function nextPage() {
+      index = (index + 1) % pages.length;
+      frame.src = pages[index].url;
+      setTimeout(nextPage, pages[index].duration);
+    }
+
+    setTimeout(nextPage, pages[0].duration);
+  </script>
+
+</body>
+</html>
