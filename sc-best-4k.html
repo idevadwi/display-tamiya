@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Best Race Leaderboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: url('sc2-4k.png') no-repeat center center fixed;
+            background-size: cover;
+            font-family: 'Tomorrow', sans-serif;
+            color: white;
+            text-align: center;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-shadow: 2px 2px 5px #000;
+        }
+
+        .leaderboard {
+            margin-top: 590px;
+            font-size: 155px;
+            width: 2200px; /* Controls max width of leaderboard */
+        }
+
+        .entry {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+
+        .rank,
+        .team {
+            text-align: left;
+        }
+
+        .rank {
+            width: 200px;
+        }
+
+        .team {
+            width: 500px;
+            flex: 1;
+        }
+
+        .score {
+            width: 200px;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="leaderboard" id="leaderboard">
+        <!-- Entries will be loaded here -->
+    </div>
+
+    <script>
+        const sheetUrl = "https://opensheet.elk.sh/1JghwSrvl-1gKpRRbE4ZEpQNmbrt-afVBDtmWr-RnXQ4/BEST_RACE";
+
+        fetch(sheetUrl)
+            .then(res => res.json())
+            .then(data => {
+                const top6 = data
+                    .sort((a, b) => parseInt(b.TOTAL) - parseInt(a.TOTAL))
+                    .slice(0, 6);
+
+                const leaderboard = document.getElementById("leaderboard");
+
+                top6.forEach((team, index) => {
+                    const entry = document.createElement("div");
+                    entry.className = "entry";
+                    entry.innerHTML = `
+                        <span class="rank">${index + 1}.</span>
+                        <span class="team">${team["TEAM NAME"]}</span>
+                        <span class="score">${team.TOTAL}</span>
+                    `;
+                    leaderboard.appendChild(entry);
+                });
+            })
+            .catch(err => {
+                document.getElementById("leaderboard").innerHTML = "Error loading leaderboard.";
+                console.error("Failed to load data:", err);
+            });
+    </script>
+</body>
+</html>
