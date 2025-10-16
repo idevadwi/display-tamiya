@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Live Leaderboard (Portrait on TV)</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@700&display=swap" rel="stylesheet" />
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: black;
+      font-family: 'Tomorrow', sans-serif;
+    }
+
+    :root {
+      --design-w: 1080px;
+      --design-h: 1920px;
+      --overscan: 0.03;
+    }
+
+    .stage {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: var(--design-w);
+      height: var(--design-h);
+      transform-origin: center center;
+      will-change: transform;
+    }
+
+    .background-image {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    .overlay {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      text-align: center;
+      color: #fff;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+      font-weight: 700;
+      letter-spacing: 1px;
+      z-index: 1;
+    }
+
+    #bto-time  { top: 530px; font-size: 140px; }
+    #bto-team  { top: 690px; font-size: 100px; }
+    #sesi1-time{ top: 985px; font-size: 140px; }
+    #sesi1-team{ top: 1150px; font-size: 100px; }
+    #limit-time{ top: 1480px; font-size: 140px; }
+  </style>
+</head>
+<body>
+  <div id="stage" class="stage">
+    <img src="bg-1.png" alt="Background" class="background-image" />
+
+    <div id="bto-time" class="overlay">00:01</div>
+    <div id="bto-team" class="overlay">TEAM 1</div>
+    <div id="sesi1-time" class="overlay">00:02</div>
+    <div id="sesi1-team" class="overlay">TEAM 2</div>
+    <div id="limit-time" class="overlay">00:03</div>
+  </div>
+
+  <script>
+    const SHEET_JSON_URL = "https://opensheet.elk.sh/1HZ_Rfy-dHDbgocy0ckAI8urAF1-wkC5m3QErxxNx_-w/Sheet1";
+
+    function fitStage() {
+      const stage = document.getElementById('stage');
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const overscan = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--overscan')) || 0;
+      const safeVW = vw * (1 - 2 * overscan);
+      const safeVH = vh * (1 - 2 * overscan);
+      const designW = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--design-w'));
+      const designH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--design-h'));
+      const scale = Math.min(safeVW / designH, safeVH / designW);
+      stage.style.transform = `translate(-50%, -50%) rotate(90deg) scale(${scale})`;
+    }
+
+    window.addEventListener('resize', fitStage);
+    window.addEventListener('orientationchange', () => setTimeout(fitStage, 200));
+    fitStage();
+
+    async function fetchData() {
+      try {
+        const res = await fetch(SHEET_JSON_URL + '?cb=' + Date.now(), { cache: 'no-store' });
+        const data = await res.json();
+
+        for (let row of data) {
+          const { Label: label, Time: time, Team: team } = row;
+          if (label === 'BTO') {
+            document.getElementById('bto-time').textContent = time;
+            document.getElementById('bto-team').textContent = team;
+          } else if (label === 'SESI 1') {
+            document.getElementById('sesi1-time').textContent = time;
+            document.getElementById('sesi1-team').textContent = team;
+          } else if (label === 'TIME LIMIT') {
+            document.getElementById('limit-time').textContent = time;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch sheet data', e);
+      }
+    }
+
+    fetchData();
+    setInterval(fetchData, 10000);
+  </script>
+</body>
+</html>
