@@ -1,111 +1,265 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Live Leaderboard with Video</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>Live Leaderboard (Portrait on TV)</title>
+
+  <!-- Fonts (falls back gracefully if blocked) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Tomorrow:wght@700&display=swap" rel="stylesheet" />
+
   <style>
+    /* ===== Reset / Base ===== */
     html, body {
       margin: 0;
       padding: 0;
       width: 100vw;
       height: 100vh;
-      overflow: hidden;
-      font-family: 'Tomorrow', sans-serif;
-      background: black;
-      position: relative;
+      overflow: hidden;            /* Prevent scrollbars on TV */
+      background: #000;            /* Avoid bright flashes on load */
+      color: #fff;
+      font-family: 'Tomorrow', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
 
-    .rotated-wrapper {
-      width: 100vh;
-      height: 100vw;
-      transform: rotate(90deg); /* Change to 270deg if needed */
-      transform-origin: center center;
+    /* ===== Configurable design size (portrait) ===== */
+    :root {
+      /* Design canvas: 1080x1920 portrait */
+      --design-w: 1080px; /* logical width before rotation */
+      --design-h: 1920px; /* logical height before rotation */
+
+      /* Overscan adjustment (some TVs crop edges). Increase if needed. */
+      --overscan: 0.03;  /* 3% on each side */
+    }
+
+    /* ===== Stage (the portrait canvas that we rotate) ===== */
+    .stage {
       position: absolute;
       top: 50%;
       left: 50%;
-      translate: -50% -50%;
+      width: var(--design-w);
+      height: var(--design-h);
+      /* We'll set transform via JS to: translate(-50%, -50%) rotate(90deg) scale(S) */
+      transform-origin: center center;
+      will-change: transform;
+      background: #000; /* keep behind video */
+    }
+
+    /* ===== Background video ===== */
+    .video-wrap {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      border-radius: 0; /* keep it simple on TV */
     }
 
     video#bg-video {
       position: absolute;
-      top: 0;
-      left: 0;
+      top: 0; left: 0; right: 0; bottom: 0;
       width: 100%;
       height: 100%;
-      object-fit: cover;
-      z-index: 0;
+      object-fit: cover;   /* fill portrait canvas */
+      background: #000;     /* if video not ready */
     }
 
+    /* ===== Overlay text ===== */
     .overlay {
       position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
       width: 100%;
       text-align: center;
-      font-weight: 400;
-      color: white;
+      color: #fff;
       text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
-      z-index: 1;
+      font-weight: 700;
+      letter-spacing: 1px;
     }
 
-    #bto-time { top: 370px; font-size: 140px; }
-    #bto-team { top: 500px; font-size: 100px; }
-    #sesi1-time { top: 720px; font-size: 140px; }
-    #sesi1-team { top: 850px; font-size: 100px; }
-    #limit-time { top: 1080px; font-size: 140px; }
+    /* Positions are based on the PORTAIT design space (1080x1920) */
+    #bto-time  { top:  530px; font-size: 140px; }
+    #bto-team  { top:  690px; font-size: 100px; }
+    #sesi1-time{ top:  985px; font-size: 140px; }
+    #sesi1-team{ top: 1150px; font-size: 100px; }
+    #limit-time{ top: 1480px; font-size: 140px; }
+
+    /* Optional small debug indicator */
+    #debug {
+      position: fixed;
+      left: 10px; bottom: 10px;
+      font: 12px/1.2 monospace;
+      padding: 6px 8px;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 4px;
+      display: none; /* toggle via ?debug=1 */
+      z-index: 9;
+    }
   </style>
 </head>
 <body>
+  <div id="debug"></div>
 
-  <div class="rotated-wrapper">
-    <!-- 🎥 Video Background -->
-    <video id="bg-video" autoplay muted loop playsinline>
-      <source src="background.mp4" type="video/mp4">
-      Your browser does not support the video tag.
-    </video>
+  <div id="stage" class="stage">
+    <div class="video-wrap">
+      <!-- IMPORTANT: place your video file next to this HTML or provide an absolute URL. -->
+      <video id="bg-video" preload="auto" autoplay muted loop playsinline webkit-playsinline poster="" >
+        <source src="background.mp4" type="video/mp4" />
+        <!-- You can add a WebM fallback if desired -->
+        Your browser does not support the video tag.
+      </video>
+    </div>
 
-    <!-- 🧾 Overlay Text -->
-    <div id="bto-time" class="overlay">00:00</div>
+    <!-- Overlay Text (Portrait coordinates) -->
+    <div id="bto-time" class="overlay">00:01</div>
     <div id="bto-team" class="overlay">TEAM 1</div>
-    <div id="sesi1-time" class="overlay">00:00</div>
+    <div id="sesi1-time" class="overlay">00:02</div>
     <div id="sesi1-team" class="overlay">TEAM 2</div>
-    <div id="limit-time" class="overlay">00:00</div>
+    <div id="limit-time" class="overlay">00:03</div>
   </div>
 
-  <!-- 🔁 Google Sheet Data -->
   <script>
-    const SHEET_JSON_URL = "https://opensheet.elk.sh/1HZ_Rfy-dHDbgocy0ckAI8urAF1-wkC5m3QErxxNx_-w/Sheet1";
-         
-    async function fetchData() {
-      try {
-        const res = await fetch(SHEET_JSON_URL);
-        const data = await res.json();
+    (function () {
+      // ===== CONFIG =====
+      var SHEET_JSON_URL = "https://opensheet.elk.sh/1HZ_Rfy-dHDbgocy0ckAI8urAF1-wkC5m3QErxxNx_-w/Sheet1";
+      var FETCH_INTERVAL_MS = 10 * 1000; // 10s
+      var RETRY_BACKOFF_MS = 3000;       // retry faster when failing
 
-        for (let row of data) {
-          const { Label: label, Time: time, Team: team } = row;
-          if (label === "BTO") {
-            document.getElementById("bto-time").textContent = time;
-            document.getElementById("bto-team").textContent = team;
-          } else if (label === "SESI 1") {
-            document.getElementById("sesi1-time").textContent = time;
-            document.getElementById("sesi1-team").textContent = team;
-          } else if (label === "TIME LIMIT") {
-            document.getElementById("limit-time").textContent = time;
-          }
+      var stage    = document.getElementById('stage');
+      var bgVideo  = document.getElementById('bg-video');
+      var debugBox = document.getElementById('debug');
+
+      var wantDebug = /[?&]debug=1\b/.test(location.search);
+      if (wantDebug) debugBox.style.display = 'block';
+
+      // ===== Rotation + Scale to fit TV viewport =====
+      // We want the 1080x1920 portrait canvas to fill a LANDSCAPE screen after rotating 90deg.
+      function fitStage() {
+        var vw = window.innerWidth;
+        var vh = window.innerHeight;
+
+        // Account for overscan (crop a little on each side)
+        var overscan = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--overscan')) || 0;
+        var safeVW = vw * (1 - 2 * overscan);
+        var safeVH = vh * (1 - 2 * overscan);
+
+        var designW = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--design-w'));
+        var designH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--design-h'));
+
+        // After rotate(90deg), the logical width becomes designH and height becomes designW.
+        var scaleX = safeVW / designH;
+        var scaleY = safeVH / designW;
+        var scale  = Math.min(scaleX, scaleY);
+
+        // Compose transform in one property (older TV browsers prefer this).
+        // Translate to center, rotate, then scale.
+        stage.style.transform = 'translate(-50%, -50%) rotate(90deg) scale(' + scale + ')';
+
+        if (wantDebug) {
+          debugBox.textContent = [
+            'vw×vh=' + vw + '×' + vh,
+            'safeVW×safeVH=' + Math.round(safeVW) + '×' + Math.round(safeVH),
+            'design=' + designW + '×' + designH + ' (portrait)',
+            'scale=' + scale.toFixed(4)
+          ].join('\n');
         }
-      } catch (e) {
-        console.error("Failed to fetch sheet data", e);
       }
-    }
 
-    fetchData();
-    setInterval(fetchData, 10000);
+      // Run on start and on resize/orientation changes
+      fitStage();
+      window.addEventListener('resize', fitStage);
 
-    document.getElementById("bg-video").addEventListener("loadeddata", () => {
-      console.log("Video loaded");
-    });
+      // Some TVs fire orientationchange; if so, handle it too.
+      window.addEventListener('orientationchange', function(){
+        // Give the TV a moment to settle
+        setTimeout(fitStage, 200);
+      }, { passive: true });
+
+      // ===== Video: try to ensure autoplay works on TV =====
+      function ensureVideoPlayback() {
+        if (!bgVideo) return;
+        var p = bgVideo.play();
+        if (p && typeof p.catch === 'function') {
+          p.catch(function () {
+            // Some TVs require a user gesture; show a simple prompt overlay.
+            var btn = document.createElement('button');
+            btn.textContent = '► Play Background';
+            btn.style.position = 'fixed';
+            btn.style.left = '50%';
+            btn.style.top = '50%';
+            btn.style.transform = 'translate(-50%, -50%)';
+            btn.style.fontSize = '24px';
+            btn.style.padding = '12px 20px';
+            btn.style.zIndex = '99';
+            document.body.appendChild(btn);
+            btn.addEventListener('click', function(){
+              bgVideo.muted = true;
+              bgVideo.play();
+              btn.remove();
+            });
+          });
+        }
+      }
+
+      bgVideo && bgVideo.addEventListener('loadeddata', ensureVideoPlayback);
+      // Also try once on load
+      if (document.readyState === 'complete') ensureVideoPlayback();
+      else window.addEventListener('load', ensureVideoPlayback);
+
+      // ===== Data fetching (Google Sheet via opensheet) =====
+      function updateOverlayFromRow(row) {
+        var label = row.Label || row.label || '';
+        var time  = row.Time  || row.time  || '';
+        var team  = row.Team  || row.team  || '';
+
+        if (label === 'BTO') {
+          var bt = document.getElementById('bto-time');
+          var bn = document.getElementById('bto-team');
+          if (bt) bt.textContent = time || '--:--';
+          if (bn) bn.textContent = team || '';
+        } else if (label === 'SESI 1') {
+          var s1t = document.getElementById('sesi1-time');
+          var s1n = document.getElementById('sesi1-team');
+          if (s1t) s1t.textContent = time || '--:--';
+          if (s1n) s1n.textContent = team || '';
+        } else if (label === 'TIME LIMIT') {
+          var lt = document.getElementById('limit-time');
+          if (lt) lt.textContent = time || '--:--';
+        }
+      }
+
+      function fetchData() {
+        // Prevent aggressive caching on some TV browsers
+        var bust = 'cb=' + Date.now();
+        var url  = SHEET_JSON_URL + (SHEET_JSON_URL.indexOf('?') > -1 ? '&' : '?') + bust;
+
+        fetch(url, {cache: 'no-store'})
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
+            if (Array.isArray(data)) {
+              for (var i = 0; i < data.length; i++) updateOverlayFromRow(data[i]);
+            }
+            scheduleNextFetch(FETCH_INTERVAL_MS);
+          })
+          .catch(function (err) {
+            if (wantDebug) debugBox.textContent += '\nfetch error: ' + (err && err.message);
+            scheduleNextFetch(RETRY_BACKOFF_MS);
+          });
+      }
+
+      var fetchTimer = null;
+      function scheduleNextFetch(delay) {
+        if (fetchTimer) clearTimeout(fetchTimer);
+        fetchTimer = setTimeout(fetchData, delay);
+      }
+
+      // Start the loop
+      fetchData();
+
+      // Optional: wake-up nudge for TVs that throttle timers
+      setInterval(function(){ /* keep JS alive */ }, 60000);
+    })();
   </script>
-
 </body>
 </html>

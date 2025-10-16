@@ -51,9 +51,19 @@
             width: 200px;
             text-align: right;
         }
+
+        #refresh-indicator {
+        position: absolute;
+        bottom: 20px;
+        right: 40px;
+        font-size: 40px;
+        color: #ccc;
+        font-weight: normal;
+        }
     </style>
 </head>
 <body>
+    <div id="refresh-indicator">Last updated: <span id="last-updated">-</span></div>
     <div class="leaderboard" id="leaderboard">
         <!-- Entries will be loaded here -->
     </div>
@@ -85,6 +95,7 @@
                 document.getElementById("leaderboard").innerHTML = "Error loading leaderboard.";
                 console.error("Failed to load data:", err);
             });
+        document.getElementById("last-updated").textContent = new Date().toLocaleTimeString();
     </script>
 </body>
 </html>
